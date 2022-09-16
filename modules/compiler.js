@@ -9,12 +9,24 @@ MOV R0, #1 // Moves the value 1 to R0
 
 import { maxWordValue } from "./constants.js";
 import { readRegister, writeRegister } from "./register.js";
-import { hexToDec } from "./format.js";
+import { binToDec, hexToDec } from "./format.js";
 
 const OPERANDS = {
 	REGISTER: 0,
 	IMMEDIATE: 1,
 	MEMORY: 2,
+};
+
+const getOperand = (operand) => {
+	if (operand.startsWith("#0x")) {
+		return hexToDec(operand.slice(3));
+	} else if (operand.startsWith("#0b")) {
+		return binToDec(operand.slice(3));
+	} else if (operand.startsWith("R")) {
+		return parseInt(readRegister(Number(operand.slice(1))));
+	} else {
+		return Number(operand.slice(1));
+	}
 };
 
 const commands = [
@@ -28,19 +40,10 @@ const commands = [
 		execute: (operands) => {
 			const [destination, source1, source2] = operands;
 
-			if (source2.startsWith("#")) {
-				writeRegister(
-					parseInt(destination.slice(1)),
-					parseInt(source2.slice(1)) +
-						parseInt(readRegister(parseInt(source1.slice(1))))
-				);
-			} else {
-				writeRegister(
-					parseInt(destination.slice(1)),
-					parseInt(readRegister(parseInt(source2.slice(1)))) +
-						parseInt(readRegister(parseInt(source1.slice(1))))
-				);
-			}
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source2) + getOperand(source1)
+			);
 		},
 	},
 	{
@@ -53,19 +56,10 @@ const commands = [
 		execute: (operands) => {
 			const [destination, source1, source2] = operands;
 
-			if (source2.startsWith("#")) {
-				writeRegister(
-					parseInt(destination.slice(1)),
-					parseInt(source2.slice(1)) -
-						parseInt(readRegister(parseInt(source1.slice(1))))
-				);
-			} else {
-				writeRegister(
-					parseInt(destination.slice(1)),
-					parseInt(readRegister(parseInt(source2.slice(1)))) -
-						parseInt(readRegister(parseInt(source1.slice(1))))
-				);
-			}
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source2) - getOperand(source1)
+			);
 		},
 	},
 	{
@@ -77,17 +71,102 @@ const commands = [
 		execute: (operands) => {
 			const [destination, source] = operands;
 
-			if (source.startsWith("#")) {
-				writeRegister(
-					parseInt(destination.slice(1)),
-					parseInt(source.slice(1))
-				);
-			} else {
-				writeRegister(
-					parseInt(destination.slice(1)),
-					readRegister(parseInt(source.slice(1)))
-				);
-			}
+			writeRegister(parseInt(destination.slice(1)), getOperand(source));
+		},
+	},
+	{
+		opcode: "AND",
+		operands: [
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER, OPERANDS.IMMEDIATE],
+		],
+		execute: (operands) => {
+			const [destination, source1, source2] = operands;
+
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source2) & getOperand(source1)
+			);
+		},
+	},
+	{
+		opcode: "ORR",
+		operands: [
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER, OPERANDS.IMMEDIATE],
+		],
+		execute: (operands) => {
+			const [destination, source1, source2] = operands;
+
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source2) | getOperand(source1)
+			);
+		},
+	},
+	{
+		opcode: "EOR",
+		operands: [
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER, OPERANDS.IMMEDIATE],
+		],
+		execute: (operands) => {
+			const [destination, source1, source2] = operands;
+
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source2) ^ getOperand(source1)
+			);
+		},
+	},
+	{
+		opcode: "LSL",
+		operands: [
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER, OPERANDS.IMMEDIATE],
+		],
+		execute: (operands) => {
+			const [destination, source1, source2] = operands;
+
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source1) << getOperand(source2)
+			);
+		},
+	},
+	{
+		opcode: "LSR",
+		operands: [
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER, OPERANDS.IMMEDIATE],
+		],
+		execute: (operands) => {
+			const [destination, source1, source2] = operands;
+
+			writeRegister(
+				parseInt(destination.slice(1)),
+				getOperand(source1) >>> getOperand(source2)
+			);
+		},
+	},
+	{
+		opcode: "MVN",
+		operands: [
+			[OPERANDS.REGISTER],
+			[OPERANDS.REGISTER, OPERANDS.IMMEDIATE],
+		],
+		execute: (operands) => {
+			const [destination, source] = operands;
+
+			writeRegister(
+				parseInt(destination.slice(1)),
+				(getOperand(source) ^ maxWordValue) >>> 0
+			);
 		},
 	},
 ];
